@@ -1,0 +1,222 @@
+* { box-sizing: border-box; }
+:root {
+  font-family: Arial, "Segoe UI", sans-serif;
+  color: #f9fafb;
+  background: #0b1120;
+  font-synthesis: none;
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, rgba(59,130,246,.15), transparent 35%),
+    #0b1120;
+}
+button, textarea, select, input { font: inherit; }
+button { cursor: pointer; }
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px max(20px, calc((100vw - 1100px)/2));
+  border-bottom: 1px solid #263245;
+  background: rgba(11,17,32,.9);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(12px);
+}
+.topbar h1 { margin: 0 0 4px; font-size: 24px; }
+.topbar p { margin: 0; color: #94a3b8; font-size: 14px; }
+.container { width: min(1100px, 100%); margin: auto; padding: 24px; }
+.screen { display: none; }
+.screen.active { display: block; }
+.card {
+  background: #111827;
+  border: 1px solid #263245;
+  border-radius: 20px;
+  padding: 22px;
+  margin-bottom: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+h2 { margin: 0 0 16px; font-size: 20px; }
+textarea, select {
+  width: 100%;
+  color: #f9fafb;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 12px;
+  outline: none;
+}
+textarea:focus, select:focus, input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96,165,250,.15);
+}
+#scriptInput { resize: vertical; line-height: 1.9; font-size: 17px; }
+.grid { display: grid; gap: 16px; }
+.settings-grid {
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  margin-top: 18px;
+}
+label { display: grid; gap: 9px; color: #cbd5e1; font-size: 14px; }
+input[type="range"] { width: 100%; accent-color: #3b82f6; }
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+button {
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-weight: 700;
+}
+.primary { color: white; background: #2563eb; }
+.primary:hover { background: #1d4ed8; }
+.secondary { color: #e2e8f0; background: #263245; }
+.secondary:hover { background: #334155; }
+.danger { color: #fecaca; background: #7f1d1d; }
+.ghost { background: transparent; border: 1px solid currentColor; }
+.hidden { display: none !important; }
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+}
+.section-heading p { color: #94a3b8; margin: -8px 0 16px; }
+.badge {
+  white-space: nowrap;
+  background: #1e3a8a;
+  color: #bfdbfe;
+  border-radius: 99px;
+  padding: 7px 12px;
+  font-size: 13px;
+}
+.segments-list { display: grid; gap: 10px; }
+.segment-item {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 14px;
+  background: #0f172a;
+  border: 1px solid #253247;
+}
+.segment-number {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #1e293b;
+  color: #93c5fd;
+  font-weight: bold;
+}
+.segment-text { resize: vertical; line-height: 1.6; }
+.sticky-actions {
+  position: sticky;
+  bottom: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(17,24,39,.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid #334155;
+}
+.session-shell { display: grid; gap: 16px; }
+.session-top { display: flex; align-items: center; gap: 20px; }
+.progress-wrap { flex: 1; }
+.progress-meta { display: flex; justify-content: space-between; color: #cbd5e1; font-size: 13px; margin-bottom: 7px; }
+.progress-bar { height: 9px; background: #1e293b; border-radius: 99px; overflow: hidden; }
+.progress-bar span { display: block; height: 100%; width: 0; background: #3b82f6; transition: width .25s ease; }
+.context-card, .current-card {
+  border: 1px solid #263245;
+  border-radius: 18px;
+  padding: 18px;
+}
+.context-card { background: rgba(17,24,39,.7); color: #94a3b8; }
+.context-card span { font-size: 12px; color: #64748b; }
+.context-card p { margin: 8px 0 0; line-height: 1.6; }
+.current-card {
+  min-height: 310px;
+  display: grid;
+  align-content: center;
+  text-align: center;
+  background: #111827;
+  position: relative;
+  overflow: hidden;
+}
+.current-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(37,99,235,.12), transparent 55%);
+  pointer-events: none;
+}
+.current-card > * { position: relative; }
+.current-card > p {
+  font-size: clamp(28px, 5vw, 58px);
+  line-height: 1.55;
+  margin: 28px auto;
+  max-width: 900px;
+  font-weight: 800;
+}
+.status {
+  justify-self: center;
+  border-radius: 99px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: bold;
+}
+.status.idle { background: #1e293b; color: #cbd5e1; }
+.status.speaking { background: #5b21b6; color: #ede9fe; }
+.status.listening { background: #065f46; color: #d1fae5; }
+.status.comparing { background: #92400e; color: #fef3c7; }
+.status.paused { background: #7f1d1d; color: #fee2e2; }
+.recognized {
+  display: grid;
+  gap: 6px;
+  color: #94a3b8;
+  border-top: 1px solid #263245;
+  padding-top: 14px;
+}
+.recognized strong { color: #e2e8f0; min-height: 22px; }
+.session-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.big { min-height: 58px; font-size: 17px; }
+.tips {
+  display: grid;
+  gap: 6px;
+  padding: 15px;
+  border-radius: 14px;
+  background: #0f172a;
+  color: #cbd5e1;
+  text-align: center;
+}
+.tips small { color: #64748b; }
+.warning {
+  border: 1px solid #f59e0b;
+  background: rgba(146,64,14,.25);
+  color: #fde68a;
+  padding: 14px;
+  border-radius: 14px;
+  line-height: 1.7;
+}
+@media (max-width: 700px) {
+  .container { padding: 14px; }
+  .topbar { padding: 14px; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .session-top { align-items: stretch; flex-direction: column; }
+  .session-actions { grid-template-columns: repeat(2, 1fr); }
+  .segment-item { grid-template-columns: 32px 1fr; }
+  .delete-segment { grid-column: 2; justify-self: start; }
+  .current-card { min-height: 280px; padding: 16px; }
+  .current-card > p { font-size: clamp(26px, 8vw, 42px); }
+}

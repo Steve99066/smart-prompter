@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <meta name="description" content="ملقّن ذكي لصنّاع المحتوى: يسمع أداءك وينتقل إلى المقطع التالي." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>الملقّن الذكي</title>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>الملقّن الذكي</h1>
+      <p>نسخة تجريبية مجانية تعمل من دون API</p>
+    </div>
+    <button id="installBtn" class="secondary hidden">تثبيت التطبيق</button>
+  </header>
+
+  <main class="container">
+    <section id="editorScreen" class="screen active">
+      <div class="card">
+        <h2>1. ألصق السكريبت</h2>
+        <textarea id="scriptInput" rows="10" placeholder="ألصق السكريبت هنا..."></textarea>
+
+        <div class="grid settings-grid">
+          <label>
+            طول المقاطع
+            <select id="chunkSize">
+              <option value="short">قصير — 4 إلى 7 كلمات</option>
+              <option value="medium" selected>متوسط — 8 إلى 13 كلمة</option>
+              <option value="long">طويل — 14 إلى 20 كلمة</option>
+            </select>
+          </label>
+
+          <label>
+            وضع الانتقال
+            <select id="modeSelect">
+              <option value="auto">تلقائي بالصوت</option>
+              <option value="hybrid" selected>هجين: صوت + أزرار</option>
+              <option value="manual">يدوي فقط</option>
+            </select>
+          </label>
+
+          <label>
+            دقة المطابقة: <strong id="thresholdValue">75%</strong>
+            <input id="threshold" type="range" min="50" max="100" value="75" />
+          </label>
+
+          <label>
+            سرعة صوت الملقّن: <strong id="rateValue">1.0×</strong>
+            <input id="speechRate" type="range" min="0.7" max="1.4" step="0.1" value="1" />
+          </label>
+
+          <label>
+            الصوت العربي
+            <select id="voiceSelect">
+              <option value="">الصوت الافتراضي</option>
+            </select>
+          </label>
+
+          <label>
+            الانتظار قبل المقطع التالي: <strong id="delayValue">0.7 ثانية</strong>
+            <input id="nextDelay" type="range" min="0" max="2" step="0.1" value="0.7" />
+          </label>
+        </div>
+
+        <div class="actions">
+          <button id="prepareBtn" class="primary">تجهيز السكريبت</button>
+          <button id="loadExampleBtn" class="secondary">تحميل مثال</button>
+          <button id="clearBtn" class="danger ghost">مسح</button>
+        </div>
+      </div>
+
+      <div id="segmentsCard" class="card hidden">
+        <div class="section-heading">
+          <div>
+            <h2>2. راجع المقاطع</h2>
+            <p>يمكنك تعديل كل مقطع قبل بدء التصوير.</p>
+          </div>
+          <span id="segmentsCount" class="badge">0 مقطع</span>
+        </div>
+
+        <div id="segmentsList" class="segments-list"></div>
+
+        <div class="actions sticky-actions">
+          <button id="startBtn" class="primary">بدء جلسة التلقين</button>
+          <button id="addSegmentBtn" class="secondary">إضافة مقطع</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="sessionScreen" class="screen">
+      <div class="session-shell">
+        <div class="session-top">
+          <button id="backToEditBtn" class="secondary">العودة للتحرير</button>
+          <div class="progress-wrap">
+            <div class="progress-meta">
+              <span id="progressText">1 / 1</span>
+              <span id="matchText">المطابقة: —</span>
+            </div>
+            <div class="progress-bar"><span id="progressFill"></span></div>
+          </div>
+        </div>
+
+        <div class="context-card previous">
+          <span>السابق</span>
+          <p id="previousSegment">—</p>
+        </div>
+
+        <div class="current-card">
+          <div id="statusPill" class="status idle">جاهز</div>
+          <p id="currentSegment">—</p>
+          <div class="recognized">
+            <span>ما سمعه التطبيق:</span>
+            <strong id="recognizedText">—</strong>
+          </div>
+        </div>
+
+        <div class="context-card next">
+          <span>التالي</span>
+          <p id="nextSegment">—</p>
+        </div>
+
+        <div class="session-actions">
+          <button id="prevBtn" class="secondary big">السابق</button>
+          <button id="repeatBtn" class="secondary big">إعادة</button>
+          <button id="pauseBtn" class="primary big">ابدأ</button>
+          <button id="nextBtn" class="secondary big">التالي</button>
+        </div>
+
+        <div class="tips">
+          <strong>الأوامر الصوتية:</strong>
+          <span>عيد — ارجع — التالي — وقف — كمّل</span>
+          <small>اختصارات الكمبيوتر: Space التالي، R إعادة، الأسهم للتنقل.</small>
+        </div>
+
+        <div id="supportWarning" class="warning hidden"></div>
+      </div>
+    </section>
+  </main>
+
+  <template id="segmentTemplate">
+    <div class="segment-item">
+      <span class="segment-number"></span>
+      <textarea rows="2" class="segment-text"></textarea>
+      <button class="delete-segment danger ghost" title="حذف">حذف</button>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

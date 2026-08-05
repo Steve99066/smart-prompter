@@ -1,4 +1,4 @@
-const CACHE_NAME = "smart-prompter-v01";
+const CACHE_NAME = "smart-prompter-v02";
 const APP_FILES = [
   "./",
   "./index.html",

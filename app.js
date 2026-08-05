@@ -16,7 +16,6 @@
     nextDelay: $("nextDelay"),
     delayValue: $("delayValue"),
     prepareBtn: $("prepareBtn"),
-    loadExampleBtn: $("loadExampleBtn"),
     clearBtn: $("clearBtn"),
     segmentsCard: $("segmentsCard"),
     segmentsList: $("segmentsList"),
@@ -43,6 +42,8 @@
 
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   let recognition = null;
+  let recognitionActive = false;
+  let retryListening = false;
   let voices = [];
   let segments = [];
   let currentIndex = 0;
@@ -335,37 +336,29 @@
 
   function commandFrom(text) {
     const n = normalizeArabic(text);
-    const commandMap = [
-      { command: "repeat", patterns: ["عيد", "اعيد", "اعد", "كرر", "مره ثانيه"] },
-      { command: "previous", patterns: ["ارجع", "السابق", "اللي قبلها", "قبل"] },
-      { command: "next", patterns: ["التالي", "كمل", "كمّل", "تجاوز"] },
-      { command: "stop", patterns: ["وقف", "توقف", "بس"] },
-      { command: "resume", patterns: ["تابع", "استمر", "كمّل", "كمل"] }
-    ];
-    for (const item of commandMap) {
-      if (item.patterns.some(p => n === normalizeArabic(p) || n.startsWith(normalizeArabic(p) + " "))) {
-        return item.command;
-      }
-    }
+
+    const repeatPatterns = ["اعاده", "إعادة", "اعد الجمله", "اعيد الجمله"];
+    const previousPatterns = ["رجوع", "ارجع للجمله", "الجمله السابقه"];
+    const continuePatterns = ["اكمل", "أكمل", "كمل"];
+
+    if (repeatPatterns.some(p => n === normalizeArabic(p))) return "repeat";
+    if (previousPatterns.some(p => n === normalizeArabic(p))) return "previous";
+    if (continuePatterns.some(p => n === normalizeArabic(p))) return "continue";
+
     return null;
   }
 
   function handleCommand(command) {
     switch (command) {
       case "repeat":
-        speakCurrent();
+        repeatCurrent();
         break;
       case "previous":
         goPrevious();
         break;
-      case "next":
-        goNext();
-        break;
-      case "stop":
-        pauseSession();
-        break;
-      case "resume":
-        resumeSession();
+      case "continue":
+        if (paused) resumeSession();
+        else goNext(false);
         break;
     }
   }
@@ -385,6 +378,8 @@
     recognition.maxAlternatives = 3;
 
     recognition.onstart = () => {
+      recognitionActive = true;
+      retryListening = false;
       if (!running || paused || speaking) return;
       setStatus("أسمعك الآن", "listening");
     };
@@ -403,8 +398,10 @@
       if (!heard) return;
 
       els.recognizedText.textContent = heard;
+
       const command = commandFrom(heard);
       if (command && finalText) {
+        retryListening = false;
         handleCommand(command);
         return;
       }
@@ -413,48 +410,81 @@
       els.matchText.textContent = `المطابقة: ${score}%`;
 
       if (finalText) {
-        setStatus("أقارن الكلام", "comparing");
         const threshold = Number(els.threshold.value);
+
         if (score >= threshold) {
+          retryListening = false;
+          setStatus("تمت المطابقة", "comparing");
           clearTimeout(nextTimer);
           nextTimer = setTimeout(() => {
             if (running && !paused) goNext(true);
           }, Number(els.nextDelay.value) * 1000);
+        } else {
+          retryListening = true;
+          setStatus("لم تتطابق — جرّب مرة ثانية", "listening");
+          clearTimeout(restartTimer);
+          restartTimer = setTimeout(() => {
+            if (recognitionActive) {
+              try { recognition.stop(); } catch (_) {}
+            } else {
+              startRecognition();
+            }
+          }, 250);
         }
       }
     };
 
     recognition.onerror = (event) => {
+      recognitionActive = false;
+
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
         els.supportWarning.textContent =
           "لم يتم السماح باستخدام الميكروفون. افتح إعدادات الموقع في المتصفح واسمح للميكروفون، ثم أعد تحميل الصفحة.";
         els.supportWarning.classList.remove("hidden");
         pauseSession();
-      } else if (event.error !== "no-speech" && event.error !== "aborted") {
-        setStatus(`خطأ صوتي: ${event.error}`, "paused");
+        return;
+      }
+
+      if (event.error === "no-speech") {
+        retryListening = true;
+        setStatus("ما سمعت كلامًا — ما زلت أستمع", "listening");
+        return;
+      }
+
+      if (event.error !== "aborted") {
+        retryListening = true;
+        setStatus("تعذر فهم الصوت — سأحاول مجددًا", "listening");
       }
     };
 
     recognition.onend = () => {
+      recognitionActive = false;
+
       if (running && !paused && !speaking && els.modeSelect.value !== "manual") {
         clearTimeout(restartTimer);
-        restartTimer = setTimeout(startRecognition, 450);
+        restartTimer = setTimeout(() => {
+          startRecognition();
+        }, retryListening ? 180 : 350);
       }
     };
   }
 
   function startRecognition() {
-    if (!recognition || paused || speaking || !running || els.modeSelect.value === "manual") return;
+    if (!recognition || recognitionActive || paused || speaking || !running || els.modeSelect.value === "manual") return;
+
     try {
       recognition.start();
     } catch (_) {
-      // SpeechRecognition throws if start is called while already active.
+      clearTimeout(restartTimer);
+      restartTimer = setTimeout(startRecognition, 300);
     }
   }
 
   function stopRecognition() {
     if (!recognition) return;
+    retryListening = false;
     try { recognition.abort(); } catch (_) {}
+    recognitionActive = false;
   }
 
   function stopEverything() {
@@ -538,11 +568,6 @@
   }
 
   els.prepareBtn.addEventListener("click", prepareScript);
-  els.loadExampleBtn.addEventListener("click", () => {
-    els.scriptInput.value =
-      "كثير من الناس يعتقدون أن الراتب العالي يعني أنك أصبحت غنيًا. لكن الحقيقة مختلفة تمامًا. الغنى لا يعتمد فقط على حجم راتبك، بل يعتمد على ما تحتفظ به وكيف تستخدم أموالك.";
-    prepareScript();
-  });
   els.clearBtn.addEventListener("click", () => {
     if (!confirm("هل تريد مسح السكريبت والمقاطع؟")) return;
     els.scriptInput.value = "";
